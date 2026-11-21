@@ -1,0 +1,92 @@
+<title>Бесконечный путь</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<link rel="stylesheet" href="style.css">
+
+
+<div class="loader" id="loader" role="status" aria-live="polite">
+  <div class="ld-in">
+    <div class="ld-name">JALOLIDDIN · 350</div>
+    <div class="ld-title">Бесконечный путь</div>
+    <div class="ld-bar"><i id="ldBar"></i></div>
+    <div class="ld-msg" id="ldMsg">Загрузка…</div>
+  </div>
+</div>
+<canvas id="gl" aria-label="Вид из кабины скоростного поезда: рельсы уходят вперёд, по сторонам лес"></canvas>
+<div class="rotate"><div class="rot-in"><div class="rot-ic">⟳</div><p>Поверните телефон горизонтально</p><small>Игра рассчитана на широкий экран</small></div></div>
+<div class="camlabel" id="camLabel"></div><div class="edgeblur" id="edgeblur"></div>
+<div class="speedfx" id="speedfx"></div>
+<div class="warpfade" id="warpfade"></div>
+<div class="scare" id="scare"></div>
+<div class="grain" id="grain"></div>
+<div class="vig"></div>
+<canvas id="cab"></canvas>
+
+<section class="scr info" aria-label="Данные поездки">
+  <h2>Данные поездки</h2>
+  <div class="mobspd"><b id="iSpd">72</b><span>км/ч</span><i id="iAcc">+0,00 м/с²</i></div>
+  <div class="status" id="iStatus">Тяга 2</div>
+  <dl class="rows">
+    <dt>Маршрут</dt><dd id="iRoute">Лесная линия</dd>
+    <dt>Дальше</dt><dd id="iSw">—</dd>
+    <dt>Режим</dt><dd id="iNotch">Тяга 2</dd>
+    <dt>Пройдено</dt><dd id="iOdo">0,00 км</dd>
+    <dt class="opt">Мощность</dt><dd class="opt" id="iPow">0 кВт</dd>
+    <dt class="opt">Реверс</dt><dd class="opt" id="iRev">Вперёд</dd>
+    <dt class="opt">В пути</dt><dd class="opt" id="iTime">00:00</dd>
+    <dt class="opt">ТМ / ТЦ</dt><dd class="opt" id="iPress">5,0 / 0,0 атм</dd>
+  </dl>
+</section>
+
+<div class="scr hud"><canvas id="hud" aria-label="Скорость и маршрут"></canvas></div>
+
+<section class="scr ctrl" aria-label="Контроллер тяги и торможения" title="Клавиши: ← → или A/D — тяга и тормоз · пробел — экстренный · E — в депо · N — нитро · R — реверс · H — сигнал">
+  <div class="head"><h2>Тяга · тормоз</h2><output id="cNotch">Тяга 2</output></div>
+  <div class="slot" id="slot" tabindex="0" role="slider" aria-label="Позиция контроллера" aria-valuemin="-2" aria-valuemax="6" aria-valuenow="2">
+    <div class="marks" id="marks"></div>
+    <div class="brk" id="brk"></div>
+    <div class="handle" id="handle"><div class="bar"></div><div class="ptr"></div><div class="knob"></div></div>
+  </div>
+  <div class="row">
+    <div class="rev" id="rev" role="group" aria-label="Реверс">
+      <button type="button" data-v="-1">Назад</button>
+      <button type="button" data-v="0">0</button>
+      <button type="button" data-v="1" class="on">Вперёд</button>
+    </div>
+    <button class="horn" id="horn" type="button">СИГНАЛ</button>
+  </div>
+  <div class="nitrowrap">
+    <button class="nitro" id="nitro" type="button" title="Экстренный разгон до 420 км/ч · клавиша N или Shift">НИТРО <kbd>N</kbd><i id="nitroBar"></i></button>
+    <button class="warpbtn" id="warp" type="button" title="Сверхзвуковая скорость · клавиша B" aria-label="Сверхзвуковая скорость"><span>»</span><kbd>B</kbd></button>
+  </div>
+  <div class="route" role="group" aria-label="Следующий маршрут и депо">
+    <div class="rhead"><span>Следующий участок</span><output id="swDist">—</output></div>
+    <p class="rnote" id="rNote">По порядку: дальше <b>Горы</b></p>
+    <button class="depbtn" id="depBtn" type="button">Заехать в депо</button>
+  </div>
+</section>
+
+<div class="ui">
+  <button class="btn" id="snd" type="button">Включить звук</button>
+  <button class="btn" id="viewBtn" type="button" title="Клавиша C">Вид снаружи</button>
+  <button class="btn" id="camBtn" type="button" title="Сменить ракурс · клавиша V (или цифры 1–6)">Ракурс</button>
+  <button class="btn" id="night" type="button" title="День / ночь · клавиша L">Ночь</button>
+  <button class="btn" id="fs" type="button">Полный экран</button>
+</div>
+
+<script>
+/* staged start: modules load one by one with a breath between them, so the loading screen can paint and show progress */
+(() => {
+  const files = ["https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js", "https://unpkg.com/three@0.128.0/examples/js/shaders/CopyShader.js", "https://unpkg.com/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js", "https://unpkg.com/three@0.128.0/examples/js/postprocessing/EffectComposer.js", "https://unpkg.com/three@0.128.0/examples/js/postprocessing/RenderPass.js", "https://unpkg.com/three@0.128.0/examples/js/postprocessing/ShaderPass.js", "https://unpkg.com/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js", "js/core.js", "js/toy.js", "js/trees.js", "js/junction.js", "js/route-forest.js", "js/route-mountains.js", "js/route-city.js", "js/route-canyon.js", "js/route-coast.js", "js/route-under.js", "js/train-materials.js", "js/train-shape.js", "js/train.js", "js/depot.js", "js/routes.js", "js/atmos.js", "js/track.js", "js/oncoming.js", "js/chaser.js", "js/hud.js", "js/physics.js", "js/sound.js", "js/controls.js", "js/speed.js", "js/cabpanel.js", "js/warp.js", "js/jet.js", "js/cams.js", "js/loop.js"], labels = { 'js/routes.js': 'Строим маршруты', 'js/route-coast.js': 'Побережье', 'js/route-canyon.js': 'Каньон', 'js/train.js': 'Собираем поезд', 'js/loop.js': 'Готовим графику' };
+  const bar = document.getElementById('ldBar'), msg = document.getElementById('ldMsg');
+  let i = 0;
+  const next = () => {
+    if (i >= files.length) return;
+    const f = files[i], el = document.createElement('script'); el.src = f; el.async = false;
+    if (labels[f]) msg.textContent = labels[f] + '…';
+    el.onload = () => { i++; bar.style.transform = `scaleX(${(i / files.length * .85).toFixed(3)})`; setTimeout(next, 0); };
+    el.onerror = () => { msg.textContent = 'Не удалось загрузить ' + f + '. Обновите страницу.'; msg.classList.add('err'); };
+    document.body.appendChild(el);
+  };
+  next();
+})();
+</script>
